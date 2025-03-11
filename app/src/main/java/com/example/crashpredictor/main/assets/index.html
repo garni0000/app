@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Crash Predictor Pro</title>
+    <style>
+        body {
+            background-color: #000000;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            font-family: 'Courier New', monospace;
+            color: #00ff00;
+            overflow: hidden;
+            position: relative;
+        }
+        body::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(45deg, 
+                rgba(0, 255, 0, 0.05) 25%, 
+                transparent 25%, 
+                transparent 50%, 
+                rgba(0, 255, 0, 0.05) 50%, 
+                rgba(0, 255, 0, 0.05) 75%, 
+                transparent 75%, 
+                transparent);
+            background-size: 20px 20px;
+            animation: moveGrid 10s linear infinite;
+            z-index: -1;
+        }
+        @keyframes moveGrid {
+            0% { transform: translateY(0); }
+            100% { transform: translateY(20px); }
+        }
+        .container {
+            background: rgba(0, 0, 0, 0.9);
+            padding: 2rem;
+            border: 2px solid #00ff00;
+            border-radius: 5px;
+            box-shadow: 0 0 20px rgba(0, 255, 0, 0.3);
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+        .scan-line {
+            position: absolute;
+            width: 100%;
+            height: 2px;
+            background: linear-gradient(to bottom, 
+                transparent 0%, 
+                rgba(0, 255, 0, 0.2) 50%, 
+                transparent 100%);
+            animation: scan 4s linear infinite;
+        }
+        h1 {
+            color: #00ff00;
+            text-transform: uppercase;
+            letter-spacing: 4px;
+            margin-bottom: 2rem;
+            text-shadow: 0 0 10px #00ff00;
+            background: linear-gradient(45deg, #00ff00, #00cc00, #00ff00);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        #result {
+            font-size: 4em;
+            margin: 1rem 0;
+            padding: 1rem;
+            background: rgba(0, 255, 0, 0.1);
+            border: 1px solid #00ff00;
+            border-radius: 3px;
+            letter-spacing: 2px;
+            transition: all 0.3s;
+        }
+        .btn {
+            background: #000;
+            color: #00ff00;
+            border: 2px solid #00ff00;
+            padding: 1rem 2rem;
+            font-size: 1.2em;
+            cursor: pointer;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            margin-top: 1rem;
+            transition: all 0.3s;
+            position: relative;
+            overflow: hidden;
+        }
+        .btn:hover {
+            background: #00ff00;
+            color: #000;
+            box-shadow: 0 0 20px #00ff00;
+        }
+        .btn::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: linear-gradient(45deg, 
+                transparent, 
+                rgba(0, 255, 0, 0.2), 
+                transparent);
+            transform: rotate(45deg);
+            animation: btnGlow 3s linear infinite;
+        }
+        @keyframes scan {
+            0% { top: -100%; }
+            100% { top: 100%; }
+        }
+        @keyframes btnGlow {
+            0% { transform: rotate(45deg) translateX(-100%); }
+            100% { transform: rotate(45deg) translateX(100%); }
+        }
+        .glitch {
+            animation: glitch 0.3s infinite;
+        }
+        @keyframes glitch {
+            0% { transform: translate(0); }
+            20% { transform: translate(-2px, 2px); }
+            40% { transform: translate(2px, -2px); }
+            60% { transform: translate(-2px, 2px); }
+            80% { transform: translate(2px, -2px); }
+            100% { transform: translate(0); }
+        }
+        #timer {
+            margin-top: 10px;
+            font-size: 1.2em;
+        }
+        .notice {
+            margin-top: 20px;
+            font-size: 0.9em;
+            color: #00ff00;
+            opacity: 0.8;
+        }
+        .alert {
+            margin-top: 20px;
+            padding: 1rem;
+            background: rgba(255, 0, 0, 0.1);
+            border: 1px solid #ff0000;
+            border-radius: 3px;
+            color: #ff0000;
+            text-shadow: 0 0 10px #ff0000;
+            animation: fadeIn 0.5s ease-in-out;
+        }
+        @keyframes fadeIn {
+            0% { opacity: 0; transform: translateY(-10px); }
+            100% { opacity: 1; transform: translateY(0); }
+        }
+        canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            z-index: -1;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="scan-line"></div>
+        <h1>Crash Predictor v1.0</h1>
+        <div id="result">0.00x</div>
+        <button class="btn" id="generateButton" onclick="generateMultiplier()">Générer Multiplicateur</button>
+        <div id="timer">Prochain tirage dans : <span id="countdown">120</span> secondes</div>
+        <button class="btn" onclick="window.open('https://t.me/solkahcrash/753', '_blank')">Rejoindre Telegram</button>
+        <div class="notice">
+            Créez un compte authentique sur <strong>1xbet</strong> ou <strong>Linebet</strong> avec le code promo <strong>Free221</strong>.
+        </div>
+        <div id="alertMessage" class="alert" style="display: none;"></div>
+    </div>
+    <canvas id="particlesCanvas"></canvas>
+    <script>
+        const ranges = [
+            { min: 1.00, max: 1.10, weight: 11.11 },
+            { min: 1.11, max: 1.20, weight: 11.11 },
+            { min: 1.21, max: 1.30, weight: 8.33 },
+            { min: 1.31, max: 1.50, weight: 8.33 },
+            { min: 1.51, max: 2.00, weight: 16.67 },
+            { min: 2.01, max: 3.00, weight: 8.33 },
+            { min: 3.01, max: 5.00, weight: 2.44 }
+        ];
+        let canGenerate = true;
+        let countdown = 120;
+        function generateMultiplier() {
+            if (!canGenerate) {
+                const alertMessage = document.getElementById('alertMessage');
+                alertMessage.textContent = `Veuillez attendre ${countdown} secondes avant de demander un autre signal.`;
+                alertMessage.style.display = 'block';
+                setTimeout(() => {
+                    alertMessage.style.display = 'none';
+                }, 3000);
+                return;
+            }
+            canGenerate = false;
+            startCountdown();
+            const totalWeight = ranges.reduce((acc, range) => acc + range.weight, 0);
+            let random = Math.random() * totalWeight;
+            let currentWeight = 0;
+            let selectedRange;
+            for (const range of ranges) {
+                currentWeight += range.weight;
+                if (random <= currentWeight) {
+                    selectedRange = range;
+                    break;
+                }
+            }
+            const min = selectedRange.min * 100;
+            const max = selectedRange.max * 100;
+            const randomValue = Math.floor(Math.random() * (max - min + 1)) + min;
+            const multiplier = randomValue / 100;
+            const resultElement = document.getElementById('result');
+            resultElement.textContent = '......';
+            resultElement.classList.add('glitch');
+            setTimeout(() => {
+                resultElement.classList.remove('glitch');
+                resultElement.textContent = multiplier.toFixed(2) + 'x';
+                if (multiplier >= 3.01) {
+                    resultElement.style.color = '#ff0000';
+                    resultElement.style.textShadow = '0 0 15px #ff0000';
+                } else {
+                    resultElement.style.color = '#00ff00';
+                    resultElement.style.textShadow = '0 0 10px #00ff00';
+                }
+            }, 500);
+        }
+        function startCountdown() {
+            const timerElement = document.getElementById('countdown');
+            const interval = setInterval(() => {
+                countdown--;
+                timerElement.textContent = countdown;
+                if (countdown <= 0) {
+                    clearInterval(interval);
+                    canGenerate = true;
+                    countdown = 120;
+                    timerElement.textContent = countdown;
+                }
+            }, 1000);
+        }
+        const canvas = document.getElementById('particlesCanvas');
+        const ctx = canvas.getContext('2d');
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+        const particles = [];
+        class Particle {
+            constructor(x, y) {
+                this.x = x;
+                this.y = y;
+                this.size = Math.random() * 3 + 1;
+                this.speedX = Math.random() * 2 - 1;
+                this.speedY = Math.random() * 2 - 1;
+                this.color = '#00ff00';
+            }
+            update() {
+                this.x += this.speedX;
+                this.y += this.speedY;
+                if (this.size > 0.2) this.size -= 0.1;
+            }
+            draw() {
+                ctx.fillStyle = this.color;
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+                ctx.fill();
+            }
+        }
+        function animateParticles() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            particles.forEach((particle, index) => {
+                particle.update();
+                particle.draw();
+                if (particle.size <= 0.2) particles.splice(index, 1);
+            });
+            requestAnimationFrame(animateParticles);
+        }
+        canvas.addEventListener('mousemove', (event) => {
+            for (let i = 0; i < 5; i++) {
+                particles.push(new Particle(event.x, event.y));
+            }
+        });
+        animateParticles();
+    </script>
+</body>
+</html>
